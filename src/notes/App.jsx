@@ -4,6 +4,7 @@ import {
   BG_MODES, normalizeBgMode,
 } from "../shared/storage";
 import { onAuth, pushNote } from "../shared/firebase";
+import BobaRunner from "./BobaRunner";
 
 function getParams() {
   const p = new URLSearchParams(window.location.search);
@@ -52,7 +53,8 @@ export default function App() {
   const [words, setWords] = useState(0);
   const [lastSaved, setLastSaved] = useState("Never");
   const [snapshots, setSnapshots] = useState(0);
-  const [bgMode, setBgMode] = useState("floating");
+  const [bgMode, setBgMode] = useState("midnight");
+  const [showGame, setShowGame] = useState(false);
 
   // Track signed-in user so we can sync to Firestore on save
   const userRef = useRef(null);
@@ -212,7 +214,12 @@ export default function App() {
     }
     const del = document.createElement("button");
     del.type = "button"; del.className = "image-control-btn danger"; del.textContent = "Delete";
-    del.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); wrap.remove(); setStatus("Typing..."); queueAutosave(300); });
+    del.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      wrap.remove();
+      setStatus("Saving...");
+      save(true).catch((err) => { console.error("Delete-image save failed:", err); setStatus("Storage is full."); });
+    });
     controls.appendChild(del);
 
     for (const dir of ["nw", "ne", "sw", "se"]) {
@@ -223,7 +230,7 @@ export default function App() {
     wrap.appendChild(img);
     wrap.appendChild(controls);
     return wrap;
-  }, [queueAutosave]);
+  }, [queueAutosave, save]);
 
   const decorateImages = useCallback(() => {
     const el = editorRef.current;
@@ -326,11 +333,8 @@ export default function App() {
 
   // ── Apply bg mode class ──
   useEffect(() => {
-    for (const m of BG_MODES) {
-      if (m === "neoClassic") continue;
-      document.body.classList.remove(`bg-${m}`);
-    }
-    if (bgMode !== "neoClassic") document.body.classList.add(`bg-${bgMode}`);
+    for (const m of BG_MODES) document.body.classList.remove(`bg-${m}`);
+    document.body.classList.add(`bg-${bgMode}`);
   }, [bgMode]);
 
   // ── Editor event handlers ──
@@ -556,6 +560,7 @@ export default function App() {
           onDragOver={(e) => { if (!e.dataTransfer?.types?.includes("text/pb-image-id")) { e.preventDefault(); } }}
           onDrop={handleSheetDrop}
         >
+          <BobaRunner visible={showGame} onClose={() => setShowGame(false)} />
           <div
             ref={editorRef}
             id="editor"
@@ -590,15 +595,24 @@ export default function App() {
               <span className="value">{snapshots}</span>
             </div>
             <div className="section-tools">
-              <button type="button" className="btn section-tool-btn" onClick={splitSection} aria-label="Split section">&#x1f528;</button>
-              <button type="button" className="btn section-tool-btn" onClick={mergeSection} aria-label="Merge section">&#x1fa79;</button>
-              <button type="button" className="btn section-tool-btn" onClick={titleSelection} aria-label="Title selection">&#x1f3f7;</button>
+              <button type="button" className="btn section-tool-btn" onClick={splitSection} aria-label="Split section">
+                <span className="tool-icon">&#x1f528;</span><span className="tool-label">Break</span>
+              </button>
+              <button type="button" className="btn section-tool-btn" onClick={mergeSection} aria-label="Merge section">
+                <span className="tool-icon">&#x1fa79;</span><span className="tool-label">Patch</span>
+              </button>
+              <button type="button" className="btn section-tool-btn" onClick={titleSelection} aria-label="Title selection">
+                <span className="tool-icon">&#x1f3f7;</span><span className="tool-label">Highlight</span>
+              </button>
             </div>
+            <button type="button" className="btn section-tool-btn game-btn" onClick={() => setShowGame((v) => !v)} aria-label="Boba Run">
+              <span className="tool-icon">&#x1f9cb;</span><span className="tool-label">{showGame ? "Close game" : "Boba Run"}</span>
+            </button>
           </div>
           <div className="scene-panel">
             <p className="label">Background scene</p>
             <div className="scene-switch">
-              {[["floating", "Floating mode"], ["midnight", "Midnight"], ["fire", "Fire"], ["neoClassic", "Classic pop"]].map(([id, label]) => (
+              {[["midnight", "Midnight"], ["fire", "Fire"]].map(([id, label]) => (
                 <button
                   key={id}
                   className={`scene-pill${bgMode === id ? " active" : ""}`}

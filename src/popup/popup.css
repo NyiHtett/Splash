@@ -1,12 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
 :root {
   color-scheme: light;
-  --bg: #ece8de;
-  --card: #fffdf7;
-  --ink: #171717;
-  --muted: #585858;
-  --accent: #14746f;
-  --neo: #111111;
-  --chip: #b9f4de;
+  --bg: #F5EDE3;
+  --card: #FFFBF5;
+  --ink: #3B2F2A;
+  --muted: #8C7B72;
+  --accent: #5B6FC7;
+  --neo: #4A3728;
+  --chip: #FFF3C4;
+  --chip-border: #E8D48B;
+  --honey: #F0C75E;
+  --warm-shadow: #6B4F3A;
+  --cream-deep: #EDE1D3;
 }
 
 * { box-sizing: border-box; }
@@ -14,8 +20,11 @@
 body {
   margin: 0;
   width: 360px;
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
-  background: var(--bg);
+  font-family: "Nunito", "Segoe UI", sans-serif;
+  background: #E8DDD0;
+  background-image:
+    radial-gradient(ellipse at 20% 80%, rgba(210, 175, 80, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(91, 111, 199, 0.15) 0%, transparent 50%);
   color: var(--ink);
 }
 
@@ -31,7 +40,7 @@ body {
   background: var(--card);
   border: 3px solid var(--neo);
   border-radius: 18px;
-  box-shadow: 5px 5px 0 var(--neo);
+  box-shadow: 5px 5px 0 var(--warm-shadow);
 }
 
 .splash-card {
@@ -44,15 +53,19 @@ body {
 
 h1 {
   margin: 0 0 2px;
+  font-family: "Fredoka", sans-serif;
   font-size: 24px;
+  font-weight: 600;
   line-height: 1;
+  color: var(--accent);
+  letter-spacing: -0.3px;
 }
 
 .sub {
   margin: 0;
   font-size: 12px;
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .logo {
@@ -61,7 +74,7 @@ h1 {
   border: 3px solid var(--neo);
   border-radius: 14px;
   object-fit: cover;
-  background: #ffffff;
+  background: var(--cream-deep);
 }
 
 .notes-block {
@@ -72,7 +85,10 @@ h1 {
 
 h2 {
   margin: 0;
+  font-family: "Fredoka", sans-serif;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--neo);
 }
 
 .notes-picker {
@@ -94,12 +110,13 @@ h2 {
 .btn {
   border: 3px solid var(--neo);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 var(--neo);
+  box-shadow: 3px 3px 0 var(--warm-shadow);
   background: #ffffff;
   color: var(--ink);
+  font-family: "Nunito", sans-serif;
   font-weight: 800;
   font-size: 11px;
-  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 200ms ease, border-color 200ms ease;
 }
 
 .notes-row-main {
@@ -111,14 +128,26 @@ h2 {
   cursor: pointer;
 }
 
+.notes-row-main:hover {
+  background: #FFF9E6;
+  border-color: var(--chip-border);
+}
+
 .notes-row-main.active {
   background: var(--chip);
+  border-color: var(--honey);
+  box-shadow: 3px 3px 0 var(--chip-border);
 }
 
 .notes-row-delete {
   padding: 0;
   color: #7f1734;
   cursor: pointer;
+}
+
+.notes-row-delete:hover:not(:disabled) {
+  background: #FFF0F0;
+  border-color: #C44D4D;
 }
 
 .notes-row-delete:disabled {
@@ -134,6 +163,10 @@ h2 {
   cursor: pointer;
 }
 
+.btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -143,20 +176,21 @@ h2 {
 .notes-row-main:active,
 .notes-row-delete:active:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--neo);
+  box-shadow: 1px 1px 0 var(--warm-shadow);
 }
 
 .hint {
   margin: 0;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .empty {
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
+  font-style: italic;
 }
 
 /* ── Auth card ── */
@@ -178,6 +212,7 @@ h2 {
   height: 36px;
   border-radius: 50%;
   border: 2px solid var(--neo);
+  box-shadow: 1px 1px 0 var(--warm-shadow);
 }
 
 .auth-info {
@@ -187,8 +222,9 @@ h2 {
 }
 
 .auth-name {
+  font-family: "Fredoka", sans-serif;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -211,12 +247,24 @@ h2 {
   color: #ffffff;
 }
 
+.btn-google:hover:not(:disabled) {
+  background: #3574E0;
+}
+
 .btn-sync {
   background: var(--accent);
   color: #ffffff;
 }
 
+.btn-sync:hover:not(:disabled) {
+  background: #4E61B5;
+}
+
 .btn-signout {
   background: #ffffff;
   color: var(--ink);
+}
+
+.btn-signout:hover:not(:disabled) {
+  background: var(--cream-deep);
 }

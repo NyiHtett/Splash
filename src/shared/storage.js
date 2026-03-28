@@ -1,8 +1,8 @@
 export const NOTES_KEY = "notesByCourse";
 export const BG_MODE_KEY = "notesBackgroundMode";
 
-export const DEFAULT_BG_MODE = "floating";
-export const BG_MODES = ["neoClassic", "floating", "midnight", "fire"];
+export const DEFAULT_BG_MODE = "midnight";
+export const BG_MODES = ["midnight", "fire"];
 export const MAX_HISTORY = 40;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_IMAGES_PER_NOTE = 12;
