@@ -5,6 +5,8 @@ import {
 } from "../shared/storage";
 import { onAuth, pushNote } from "../shared/firebase";
 import BobaRunner from "./BobaRunner";
+import BobaMascot from "./BobaMascot";
+import BobaAgent from "./BobaAgent";
 
 function getParams() {
   const p = new URLSearchParams(window.location.search);
@@ -28,6 +30,27 @@ function stripImages(html) {
   d.innerHTML = html;
   d.querySelectorAll(".note-image-wrap, img").forEach((n) => n.remove());
   return normalizeHtml(d.innerHTML);
+}
+function stripInlineStyles(el) {
+  const keep = new Set(["note-section", "note-image-wrap", "note-inline-image", "note-title-chip", "image-controls", "image-control-btn", "resize-handle"]);
+  const unwrapTags = new Set(["B", "STRONG", "I", "EM", "U", "FONT", "MARK", "S", "STRIKE"]);
+  // Unwrap formatting tags (replace with their text content)
+  for (const tag of unwrapTags) {
+    el.querySelectorAll(tag).forEach((node) => {
+      if (node.closest(".note-image-wrap, .note-title-chip, .image-controls")) return;
+      const parent = node.parentNode;
+      while (node.firstChild) parent.insertBefore(node.firstChild, node);
+      parent.removeChild(node);
+    });
+  }
+  el.querySelectorAll("*").forEach((node) => {
+    if (node.classList && [...node.classList].some((c) => keep.has(c))) return;
+    if (node.tagName === "IMG") return;
+    node.removeAttribute("style");
+    node.removeAttribute("color");
+    node.removeAttribute("face");
+    node.removeAttribute("size");
+  });
 }
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -55,6 +78,7 @@ export default function App() {
   const [snapshots, setSnapshots] = useState(0);
   const [bgMode, setBgMode] = useState("midnight");
   const [showGame, setShowGame] = useState(false);
+  const [agentAwake, setAgentAwake] = useState(false);
 
   // Track signed-in user so we can sync to Firestore on save
   const userRef = useRef(null);
@@ -305,6 +329,7 @@ export default function App() {
           mainSec.appendChild(node);
         }
         decorateImages();
+        stripInlineStyles(el);
         lastSavedHtml.current = serializeHtml();
         lastSnapText.current = (entry.history?.length ? entry.history[entry.history.length - 1].text : "") || "";
         updateStats(getPlainText(), entry.history || []);
@@ -372,9 +397,17 @@ export default function App() {
   const handlePaste = useCallback((e) => {
     const items = Array.from(e.clipboardData?.items || []);
     const files = items.filter((i) => i.type?.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean);
-    if (!files.length) return;
-    e.preventDefault();
-    addImagesAtCursor(files);
+    if (files.length) {
+      e.preventDefault();
+      addImagesAtCursor(files);
+      return;
+    }
+    // Strip formatting: paste as plain text only
+    const text = e.clipboardData?.getData("text/plain");
+    if (text != null) {
+      e.preventDefault();
+      document.execCommand("insertText", false, text);
+    }
   }, [addImagesAtCursor]);
 
   const handleEditorClick = useCallback((e) => {
@@ -529,6 +562,7 @@ export default function App() {
     handleInput();
   }, [handleInput]);
 
+
   // ── Background mode ──
   const changeBg = useCallback(async (mode) => {
     const m = normalizeBgMode(mode);
@@ -608,6 +642,10 @@ export default function App() {
             <button type="button" className="btn section-tool-btn game-btn" onClick={() => setShowGame((v) => !v)} aria-label="Boba Run">
               <span className="tool-icon">&#x1f9cb;</span><span className="tool-label">{showGame ? "Close game" : "Boba Run"}</span>
             </button>
+          </div>
+          <div className={`mascot-area${agentAwake ? " agent-active" : ""}`}>
+            <BobaMascot awake={agentAwake} onClick={() => setAgentAwake((v) => !v)} />
+            <p className="mascot-hint">{agentAwake ? "Agent ready!" : "Tap to wake"}</p>
           </div>
           <div className="scene-panel">
             <p className="label">Background scene</p>

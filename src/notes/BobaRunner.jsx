@@ -74,28 +74,22 @@ function drawBobaCup(ctx, x, y, legFrame, skin) {
   ctx.fillStyle = s.tea;
   ctx.fillRect(x + 9, cupTop + 15, cupW - 18, cupH - 28);
 
-  // Tapioca pearls
-  ctx.fillStyle = s.pearls;
-  const pearls = [
-    [12, 28], [18, 30], [14, 34], [20, 26],
-    [16, 22], [22, 32], [10, 26], [24, 28],
-  ];
-  for (const [px, py] of pearls) {
-    if (px < cupW - 10) ctx.fillRect(x + px, cupTop + py, 3, 3);
-  }
-
   // Eyes
   ctx.fillStyle = s.eyes;
-  ctx.fillRect(x + 9, cupTop + 16, 3, 3);
-  ctx.fillRect(x + 18, cupTop + 16, 3, 3);
+  ctx.fillRect(x + 10, cupTop + 17, 3, 3);
+  ctx.fillRect(x + 18, cupTop + 17, 3, 3);
   ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(x + 9, cupTop + 16, 1, 1);
-  ctx.fillRect(x + 18, cupTop + 16, 1, 1);
+  ctx.fillRect(x + 10, cupTop + 17, 1, 1);
+  ctx.fillRect(x + 18, cupTop + 17, 1, 1);
 
   // Cheek blush
   ctx.fillStyle = s.blush;
-  ctx.fillRect(x + 6, cupTop + 20, 4, 2);
-  ctx.fillRect(x + 20, cupTop + 20, 4, 2);
+  ctx.fillRect(x + 7, cupTop + 22, 4, 2);
+  ctx.fillRect(x + 20, cupTop + 22, 4, 2);
+
+  // Mouth
+  ctx.fillStyle = s.bodyDark;
+  ctx.fillRect(x + 14, cupTop + 24, 3, 2);
 
   // Legs
   ctx.fillStyle = s.legs;
