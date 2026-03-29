@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Splash",
+  "name": "Boba",
   "version": "1.0.0",
   "description": "Aesthetic note-taking with Google sign-in cloud sync.",
   "permissions": [

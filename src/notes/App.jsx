@@ -6,7 +6,7 @@ import {
 import { onAuth, pushNote } from "../shared/firebase";
 import BobaRunner from "./BobaRunner";
 import BobaMascot from "./BobaMascot";
-import BobaAgent from "./BobaAgent";
+import BobaQuiz from "./BobaQuiz";
 
 function getParams() {
   const p = new URLSearchParams(window.location.search);
@@ -65,6 +65,8 @@ function fileToDataUrl(file) {
 
 export default function App() {
   const ctx = useRef(getParams()).current;
+  const [label, setLabel] = useState(ctx.label);
+  const labelRef = useRef(ctx.label);
   const editorRef = useRef(null);
   const autosaveTimer = useRef(null);
   const resizeSession = useRef(null);
@@ -79,6 +81,9 @@ export default function App() {
   const [bgMode, setBgMode] = useState("midnight");
   const [showGame, setShowGame] = useState(false);
   const [agentAwake, setAgentAwake] = useState(false);
+  const [quizPhase, setQuizPhase] = useState("idle");
+  const [quizSection, setQuizSection] = useState(null);
+  const sheetRef = useRef(null);
 
   // Track signed-in user so we can sync to Firestore on save
   const userRef = useRef(null);
@@ -94,6 +99,7 @@ export default function App() {
     if (!el) return "";
     const clone = el.cloneNode(true);
     clone.querySelectorAll(".image-controls").forEach((n) => n.remove());
+    clone.querySelectorAll(".note-section").forEach((s) => s.classList.remove("quiz-active"));
     clone.querySelectorAll(".note-image-wrap").forEach((w) => {
       w.classList.remove("selected");
       w.removeAttribute("contenteditable");
@@ -135,7 +141,7 @@ export default function App() {
     const entry = notes[ctx.contextId] || { text: "", html: "", history: [] };
     entry.html = html;
     entry.text = text;
-    entry.label = ctx.label;
+    entry.label = labelRef.current;
     entry.sourceUrl = ctx.sourceUrl;
     entry.updatedAt = Date.now();
 
@@ -320,9 +326,19 @@ export default function App() {
         el.querySelectorAll(".note-section").forEach((s) => {
           s.setAttribute("contenteditable", "true");
           s.setAttribute("spellcheck", "true");
+          s.classList.remove("quiz-active");
           if (!s.hasAttribute("data-placeholder")) s.setAttribute("data-placeholder", "Start writing...");
           normalizeContent(s);
         });
+        // Remove empty trailing sections (except the first one)
+        const allSections = el.querySelectorAll(".note-section");
+        for (let i = allSections.length - 1; i > 0; i--) {
+          const sec = allSections[i];
+          const hasText = (sec.textContent || "").trim();
+          const hasImage = sec.querySelector(".note-image-wrap, img");
+          if (!hasText && !hasImage) sec.remove();
+          else break;
+        }
         const mainSec = el.querySelector(".note-section");
         for (const node of Array.from(el.childNodes)) {
           if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains("note-section")) continue;
@@ -365,7 +381,7 @@ export default function App() {
   // ── Editor event handlers ──
   const handleInput = useCallback(() => {
     setStatus("Typing...");
-    queueAutosave(1200);
+    queueAutosave(600);
   }, [queueAutosave]);
 
   const handleKeyDown = useCallback((e) => {
@@ -391,6 +407,7 @@ export default function App() {
       const r = sel.getRangeAt(0);
       if (editorRef.current?.contains(r.commonAncestorContainer)) lastRange.current = r.cloneRange();
     }
+    if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null; }
     save(true).catch((e) => { console.error(e); setStatus("Storage is full."); });
   }, [save]);
 
@@ -497,14 +514,39 @@ export default function App() {
     save(true).catch(console.error);
   }, [save]);
 
+  const syncSaveNow = useCallback(() => {
+    const html = serializeHtml();
+    const text = getPlainText();
+    if (html === lastSavedHtml.current) return;
+    const notes = { ...notesRef.current };
+    const entry = notes[ctx.contextId] || { text: "", html: "", history: [] };
+    entry.html = html;
+    entry.text = text;
+    entry.label = labelRef.current;
+    entry.sourceUrl = ctx.sourceUrl;
+    entry.updatedAt = Date.now();
+    notes[ctx.contextId] = entry;
+    notesRef.current = notes;
+    lastSavedHtml.current = html;
+    chrome.storage.local.set({ [NOTES_KEY]: notes });
+  }, [ctx, serializeHtml, getPlainText]);
+
   useEffect(() => {
+    const onBeforeUnload = (e) => {
+      if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null; }
+      syncSaveNow();
+    };
     document.addEventListener("visibilitychange", handleVisChange);
+    window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("pagehide", () => {
       if (autosaveTimer.current) { clearTimeout(autosaveTimer.current); autosaveTimer.current = null; }
-      save(true).catch(console.error);
+      syncSaveNow();
     });
-    return () => document.removeEventListener("visibilitychange", handleVisChange);
-  }, [handleVisChange, save]);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisChange);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [handleVisChange, save, syncSaveNow]);
 
   // ── Section tools ──
   const splitSection = useCallback(() => {
@@ -580,10 +622,41 @@ export default function App() {
     });
     const body = paragraphs.map((l) => l ? `<p>${escapeHtml(l)}</p>` : `<br>`).join("");
     const win = window.open("", "_blank");
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(ctx.label)}</title><style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');body{font-family:"Nunito",sans-serif;max-width:680px;margin:40px auto;padding:0 24px;color:#222;font-size:15px;line-height:1.8}h1{font-size:22px;margin-bottom:24px}p{margin:0}</style></head><body><h1>${escapeHtml(ctx.label)}</h1>${body}</body></html>`);
+    const title = labelRef.current;
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');body{font-family:"Nunito",sans-serif;max-width:680px;margin:40px auto;padding:0 24px;color:#222;font-size:15px;line-height:1.8}h1{font-size:22px;margin-bottom:24px}p{margin:0}</style></head><body><h1>${escapeHtml(title)}</h1>${body}</body></html>`);
     win.document.close();
     win.print();
-  }, [ctx.label]);
+  }, []);
+
+  // ── Quiz ──
+  const getSectionText = useCallback((sectionEl) => {
+    if (!sectionEl) return "";
+    const clone = sectionEl.cloneNode(true);
+    clone.querySelectorAll(".image-controls").forEach((n) => n.remove());
+    clone.querySelectorAll(".note-image-wrap").forEach((w) => w.replaceWith(document.createTextNode(" ")));
+    return (clone.textContent || "").replace(/\s+/g, " ").trim();
+  }, []);
+
+  const handleQuizSelect = useCallback((sectionEl) => {
+    setQuizSection(sectionEl);
+    setQuizPhase("loading");
+  }, []);
+
+  const handleQuizComplete = useCallback(() => {
+    setQuizPhase("restoring");
+    setTimeout(() => {
+      setQuizPhase("idle");
+      setQuizSection(null);
+      setAgentAwake(false);
+    }, 1500);
+  }, []);
+
+  const handleQuizClose = useCallback(() => {
+    editorRef.current?.querySelectorAll(".note-section.quiz-active").forEach((s) => s.classList.remove("quiz-active"));
+    setQuizPhase("idle");
+    setQuizSection(null);
+    setAgentAwake(false);
+  }, []);
 
   // ── Background mode ──
   const changeBg = useCallback(async (mode) => {
@@ -591,6 +664,13 @@ export default function App() {
     setBgMode(m);
     await chrome.storage.local.set({ [BG_MODE_KEY]: m });
   }, []);
+
+  const handleLabelChange = useCallback((e) => {
+    const val = e.target.value;
+    setLabel(val);
+    labelRef.current = val;
+    queueAutosave(800);
+  }, [queueAutosave]);
 
   const handleOpenSource = useCallback(() => {
     if (ctx.sourceUrl) window.location.href = ctx.sourceUrl;
@@ -600,7 +680,13 @@ export default function App() {
     <>
       <header>
         <div className="title">
-          <h1>{ctx.label}</h1>
+          <input
+            className="title-input"
+            value={label}
+            onChange={handleLabelChange}
+            onBlur={() => save(false).catch(console.error)}
+            spellCheck={false}
+          />
           <p className="sub">Note</p>
         </div>
         <div className="actions">
@@ -613,10 +699,22 @@ export default function App() {
       <main>
         <div
           className="sheet"
+          ref={sheetRef}
           onDragOver={(e) => { if (!e.dataTransfer?.types?.includes("text/pb-image-id")) { e.preventDefault(); } }}
           onDrop={handleSheetDrop}
         >
           <BobaRunner visible={showGame} onClose={() => setShowGame(false)} />
+          <BobaQuiz
+            phase={quizPhase}
+            sectionEl={quizSection}
+            editorEl={editorRef.current}
+            sheetEl={sheetRef.current}
+            onSelectSection={handleQuizSelect}
+            getSectionText={getSectionText}
+            onPhaseChange={setQuizPhase}
+            onComplete={handleQuizComplete}
+            onClose={handleQuizClose}
+          />
           <div
             ref={editorRef}
             id="editor"
@@ -669,8 +767,18 @@ export default function App() {
             </button>
           </div>
           <div className={`mascot-area${agentAwake ? " agent-active" : ""}`}>
-            <BobaMascot awake={agentAwake} onClick={() => setAgentAwake((v) => !v)} />
-            <p className="mascot-hint">{agentAwake ? "Agent ready!" : "Tap to wake"}</p>
+            {quizPhase === "selecting" && (
+              <div className="speech-bubble">Tap a dot to pick a block!</div>
+            )}
+            <BobaMascot awake={agentAwake} onClick={() => {
+              if (quizPhase === "idle") { setAgentAwake(true); setQuizPhase("selecting"); }
+              else { handleQuizClose(); }
+            }} />
+            <p className="mascot-hint">
+              {quizPhase === "loading" ? "Brewing..." :
+               quizPhase !== "idle" ? "Quizzing..." :
+               "Tap to wake"}
+            </p>
           </div>
           <div className="scene-panel">
             <p className="label">Background scene</p>

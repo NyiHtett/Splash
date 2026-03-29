@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Boba Promo Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { background: #2C1810; color: #F5E6D3; font-family: "Nunito", sans-serif; padding: 40px; }
+  h1 { font-family: "Fredoka", sans-serif; color: #F0C75E; }
+  h2 { font-family: "Fredoka", sans-serif; color: #D4A574; margin-top: 40px; }
+  canvas { display: block; border: 3px solid #4A3728; border-radius: 8px; margin: 12px 0; }
+  .hint { color: #8B7355; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  button {
+    font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 14px;
+    background: #5B6FC7; color: #fff; border: 3px solid #3D2E22;
+    border-radius: 12px; padding: 10px 20px; cursor: pointer;
+    box-shadow: 4px 4px 0 #3D2E22; margin: 8px 8px 8px 0;
+  }
+  button:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #3D2E22; }
+</style>
+</head>
+<body>
+<h1>Boba Web Store Promo Generator</h1>
+
+<h2>Small Promo Tile (440 x 280)</h2>
+<p class="hint">Right-click canvas > "Save image as..." or use the button below</p>
+<canvas id="small" width="440" height="280"></canvas>
+<button onclick="download('small','boba-small-promo-440x280.png')">Download Small</button>
+
+<h2>Marquee Promo Tile (1400 x 560)</h2>
+<p class="hint">Right-click canvas > "Save image as..." or use the button below</p>
+<canvas id="marquee" width="1400" height="560"></canvas>
+<button onclick="download('marquee','boba-marquee-promo-1400x560.png')">Download Marquee</button>
+
+<script>
+function download(id, filename) {
+  const c = document.getElementById(id);
+  const a = document.createElement("a");
+  a.download = filename;
+  a.href = c.toDataURL("image/png");
+  a.click();
+}
+
+function drawBobaCup(ctx, x, y, scale) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  // Lid dome
+  ctx.fillStyle = "#F5E6D3";
+  ctx.fillRect(2, 0, 26, 6);
+  ctx.fillRect(4, -3, 22, 4);
+  ctx.fillRect(8, -5, 14, 3);
+
+  // Lid rim
+  ctx.fillStyle = "#D4C4B0";
+  ctx.fillRect(0, 5, 30, 3);
+
+  // Straw
+  ctx.fillStyle = "#E85D75";
+  ctx.fillRect(13, -18, 4, 20);
+  ctx.fillRect(13, -18, 8, 3);
+  ctx.fillRect(18, -22, 3, 7);
+
+  // Cup body
+  ctx.fillStyle = "#8B5E3C";
+  ctx.fillRect(2, 8, 26, 26);
+  ctx.fillStyle = "#7A5030";
+  ctx.fillRect(4, 30, 22, 4);
+  ctx.fillRect(3, 26, 24, 4);
+
+  // Highlight
+  ctx.fillStyle = "#A07050";
+  ctx.fillRect(5, 10, 3, 22);
+
+  // Window + tea
+  ctx.fillStyle = "#F5E6D3";
+  ctx.fillRect(8, 14, 14, 14);
+  ctx.fillStyle = "#D4A574";
+  ctx.fillRect(9, 15, 12, 12);
+
+  // Eyes (awake)
+  ctx.fillStyle = "#2C1810";
+  ctx.fillRect(10, 17, 3, 3);
+  ctx.fillRect(18, 17, 3, 3);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(10, 17, 1, 1);
+  ctx.fillRect(18, 17, 1, 1);
+
+  // Blush
+  ctx.fillStyle = "rgba(232, 93, 117, 0.55)";
+  ctx.fillRect(7, 22, 4, 2);
+  ctx.fillRect(20, 22, 4, 2);
+
+  // Mouth
+  ctx.fillStyle = "#5A3A20";
+  ctx.fillRect(14, 24, 3, 2);
+
+  // Legs
+  ctx.fillStyle = "#8B5E3C";
+  ctx.fillRect(6, 34, 4, 5);
+  ctx.fillRect(20, 34, 4, 5);
+
+  // Shoes
+  ctx.fillStyle = "#E85D75";
+  ctx.fillRect(4, 38, 7, 3);
+  ctx.fillRect(19, 38, 7, 3);
+
+  ctx.restore();
+}
+
+function drawStars(ctx, w, h, count, seed) {
+  // Pseudo-random based on seed
+  let s = seed;
+  function rand() { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; }
+
+  for (let i = 0; i < count; i++) {
+    const x = rand() * w;
+    const y = rand() * h;
+    const size = 0.5 + rand() * 1.5;
+    const alpha = 0.3 + rand() * 0.6;
+    ctx.fillStyle = `rgba(255, 255, 240, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // A few blue twinkles
+  for (let i = 0; i < Math.floor(count / 8); i++) {
+    const x = rand() * w;
+    const y = rand() * h;
+    const size = 1 + rand() * 1.5;
+    ctx.fillStyle = `rgba(130, 160, 255, ${0.3 + rand() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawCard(ctx, x, y, w, h, radius, bg, borderColor, shadowColor) {
+  // Shadow
+  ctx.fillStyle = shadowColor;
+  roundRect(ctx, x + 5, y + 5, w, h, radius);
+  ctx.fill();
+  // Border
+  ctx.fillStyle = borderColor;
+  roundRect(ctx, x - 3, y - 3, w + 6, h + 6, radius + 2);
+  ctx.fill();
+  // Background
+  ctx.fillStyle = bg;
+  roundRect(ctx, x, y, w, h, radius);
+  ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawPromo(canvasId, W, H) {
+  const c = document.getElementById(canvasId);
+  const ctx = c.getContext("2d");
+
+  const isSmall = W < 600;
+  const scale = isSmall ? 1 : 2;
+
+  // Background — midnight gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#0D1033");
+  bg.addColorStop(0.5, "#161240");
+  bg.addColorStop(1, "#1D1850");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle color blobs
+  const g1 = ctx.createRadialGradient(W * 0.2, H * 0.15, 0, W * 0.2, H * 0.15, W * 0.25);
+  g1.addColorStop(0, "rgba(91, 111, 199, 0.2)");
+  g1.addColorStop(1, "transparent");
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, W, H);
+
+  const g2 = ctx.createRadialGradient(W * 0.78, H * 0.22, 0, W * 0.78, H * 0.22, W * 0.2);
+  g2.addColorStop(0, "rgba(140, 120, 200, 0.18)");
+  g2.addColorStop(1, "transparent");
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, W, H);
+
+  const g3 = ctx.createRadialGradient(W * 0.55, H * 0.75, 0, W * 0.55, H * 0.75, W * 0.3);
+  g3.addColorStop(0, "rgba(91, 111, 199, 0.12)");
+  g3.addColorStop(1, "transparent");
+  ctx.fillStyle = g3;
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  drawStars(ctx, W, H, isSmall ? 80 : 250, 42);
+
+  // Moon
+  const moonX = W * 0.5;
+  const moonY = H * 0.18;
+  const moonR = isSmall ? 18 : 32;
+  // Moon glow
+  const moonGlow = ctx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 3);
+  moonGlow.addColorStop(0, "rgba(240, 230, 200, 0.15)");
+  moonGlow.addColorStop(1, "transparent");
+  ctx.fillStyle = moonGlow;
+  ctx.fillRect(0, 0, W, H);
+  // Moon body
+  ctx.fillStyle = "#F0E8D8";
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.fill();
+  // Crescent cutout
+  ctx.fillStyle = "#0D1033";
+  ctx.beginPath();
+  ctx.arc(moonX + moonR * 0.35, moonY - moonR * 0.2, moonR * 0.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Layout
+  const centerX = isSmall ? W * 0.38 : W * 0.35;
+  const centerY = H / 2;
+
+  // Title "Boba"
+  const titleSize = isSmall ? 52 : 96;
+  ctx.font = `700 ${titleSize}px Fredoka`;
+  ctx.fillStyle = "#5B6FC7";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  const textX = isSmall ? 40 : 120;
+  const titleY = centerY - (isSmall ? 14 : 20);
+  ctx.fillText("Boba", textX, titleY);
+
+  // Tagline
+  const tagSize = isSmall ? 14 : 24;
+  ctx.font = `700 ${tagSize}px Nunito`;
+  ctx.fillStyle = "#9B8E82";
+  ctx.fillText("Take notes in an aesthetic world.", textX, titleY + titleSize * 0.5 + (isSmall ? 10 : 18));
+
+  // Boba mascot — floating freely on the right
+  const mascotScale = isSmall ? 3.2 : 5.5;
+  const mascotCupW = 30 * mascotScale;
+  const mascotCupH = 41 * mascotScale;
+  const mascotX = isSmall ? W - mascotCupW - 30 : W - mascotCupW - 180;
+  const mascotY = centerY - mascotCupH / 2 + mascotScale * 3;
+  drawBobaCup(ctx, mascotX, mascotY, mascotScale);
+
+  // Sparkles around mascot
+  const sparkles = [
+    [mascotX - 12, mascotY - 10],
+    [mascotX + mascotCupW + 8, mascotY + 15],
+    [mascotX + mascotCupW - 5, mascotY + mascotCupH + 10],
+    [mascotX - 8, mascotY + mascotCupH - 8],
+  ];
+  for (const [sx, sy] of sparkles) {
+    const ss = isSmall ? 6 : 10;
+    ctx.fillStyle = "rgba(255, 255, 240, 0.7)";
+    ctx.fillRect(sx - ss, sy - 0.5, ss * 2, 1);
+    ctx.fillRect(sx - 0.5, sy - ss, 1, ss * 2);
+  }
+
+  // Floating boba pearls decoration
+  const pearls = isSmall
+    ? [[35, 60], [W - 40, H - 50], [60, H - 35], [W - 30, H - 100]]
+    : [[80, 100], [W - 100, H - 80], [150, H - 60], [W - 180, 70], [W / 2 + 250, H - 50], [200, H - 120]];
+  for (const [px, py] of pearls) {
+    const pr = isSmall ? 5 : 8;
+    const pg = ctx.createRadialGradient(px - pr * 0.3, py - pr * 0.3, 0, px, py, pr);
+    pg.addColorStop(0, "#D4A574");
+    pg.addColorStop(1, "#5A3A20");
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#3D2E22";
+    ctx.lineWidth = isSmall ? 1.5 : 2;
+    ctx.stroke();
+  }
+}
+
+// Wait for fonts to load
+document.fonts.ready.then(() => {
+  drawPromo("small", 440, 280);
+  drawPromo("marquee", 1400, 560);
+});
+</script>
+</body>
+</html>

@@ -124,6 +124,8 @@ export default function App() {
   const handleSignOut = useCallback(async () => {
     try {
       await signOutUser();
+      await chrome.storage.local.set({ [NOTES_KEY]: {} });
+      setNotesByCourse({});
       setSyncStatus("");
     } catch (err) {
       console.error("Sign-out failed:", err);
@@ -185,7 +187,7 @@ export default function App() {
     <div className="wrap">
       <section className="splash-card">
         <div>
-          <h1>Splash</h1>
+          <h1>Boba</h1>
           <p className="sub">Take notes in an aesthetic world.</p>
         </div>
         <img className="logo" src={chrome.runtime.getURL("icons/icon128.png")} alt="Splash logo" />
