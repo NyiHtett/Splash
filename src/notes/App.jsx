@@ -562,6 +562,28 @@ export default function App() {
     handleInput();
   }, [handleInput]);
 
+  const exportPdf = useCallback(() => {
+    const el = editorRef.current;
+    if (!el || !(el.textContent || "").trim()) { setStatus("Nothing to export"); return; }
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll(".note-image-wrap, img, .image-controls").forEach((n) => n.remove());
+    // Convert sections and <br> into paragraphs
+    const paragraphs = [];
+    clone.querySelectorAll(".note-section").forEach((sec) => {
+      const html = sec.innerHTML.replace(/<div><br><\/div>/g, "<br>").replace(/<div>/g, "<br>").replace(/<\/div>/g, "");
+      const lines = html.split(/<br\s*\/?>/i);
+      for (const line of lines) {
+        const txt = line.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+        paragraphs.push(txt);
+      }
+      paragraphs.push("");
+    });
+    const body = paragraphs.map((l) => l ? `<p>${escapeHtml(l)}</p>` : `<br>`).join("");
+    const win = window.open("", "_blank");
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(ctx.label)}</title><style>@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');body{font-family:"Nunito",sans-serif;max-width:680px;margin:40px auto;padding:0 24px;color:#222;font-size:15px;line-height:1.8}h1{font-size:22px;margin-bottom:24px}p{margin:0}</style></head><body><h1>${escapeHtml(ctx.label)}</h1>${body}</body></html>`);
+    win.document.close();
+    win.print();
+  }, [ctx.label]);
 
   // ── Background mode ──
   const changeBg = useCallback(async (mode) => {
@@ -637,6 +659,9 @@ export default function App() {
               </button>
               <button type="button" className="btn section-tool-btn" onClick={titleSelection} aria-label="Title selection">
                 <span className="tool-icon">&#x1f3f7;</span><span className="tool-label">Highlight</span>
+              </button>
+              <button type="button" className="btn section-tool-btn" onClick={exportPdf} aria-label="Export PDF">
+                <span className="tool-icon">&#x1f4c4;</span><span className="tool-label">Export</span>
               </button>
             </div>
             <button type="button" className="btn section-tool-btn game-btn" onClick={() => setShowGame((v) => !v)} aria-label="Boba Run">

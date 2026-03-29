@@ -380,7 +380,7 @@ main {
   white-space: pre-wrap;
 }
 
-#editor :where(span, p, div, a, b, strong, i, em, u, s, font, mark, li, ol, ul, h1, h2, h3, h4, h5, h6, blockquote, pre, code, sub, sup, strike):not(.note-image-wrap):not(.note-image-wrap *):not(.note-title-chip):not(.image-controls):not(.image-control-btn):not(.resize-handle) {
+#editor :where(span, p, div, a, b, strong, i, em, u, s, font, mark, li, ol, ul, h1, h2, h3, h4, h5, h6, blockquote, pre, code, sub, sup, strike):not(.note-section):not(.note-image-wrap):not(.note-image-wrap *):not(.note-title-chip):not(.image-controls):not(.image-control-btn):not(.resize-handle) {
   all: unset !important;
   color: var(--ink) !important;
   font-family: "Nunito", "Segoe UI", sans-serif !important;
@@ -543,7 +543,7 @@ aside {
 
 .section-tools {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
