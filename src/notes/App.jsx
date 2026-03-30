@@ -4,6 +4,7 @@ import {
   BG_MODES, normalizeBgMode,
 } from "../shared/storage";
 import { onAuth, pushNote } from "../shared/firebase";
+import { checkProStatus, openPaymentPage, openTrialPage } from "../shared/paywall";
 import BobaRunner from "./BobaRunner";
 import BobaMascot from "./BobaMascot";
 import BobaQuiz from "./BobaQuiz";
@@ -83,6 +84,9 @@ export default function App() {
   const [agentAwake, setAgentAwake] = useState(false);
   const [quizPhase, setQuizPhase] = useState("idle");
   const [quizSection, setQuizSection] = useState(null);
+  const [isPro, setIsPro] = useState(null);
+  const [proUser, setProUser] = useState(null);
+  const isProRef = useRef(false);
   const sheetRef = useRef(null);
 
   // Track signed-in user so we can sync to Firestore on save
@@ -90,6 +94,23 @@ export default function App() {
   useEffect(() => {
     return onAuth((u) => { userRef.current = u; });
   }, []);
+
+  // Check paywall status
+  useEffect(() => {
+    checkProStatus().then(({ isPro: pro, user }) => {
+      setIsPro(pro);
+      setProUser(user);
+      isProRef.current = pro;
+    }).catch(() => { setIsPro(false); isProRef.current = false; });
+  }, []);
+
+  const showUpgradePrompt = useCallback(() => {
+    if (!proUser?.trialStartedAt) {
+      if (confirm("This is a Pro feature. Start your free 3-day trial?")) openTrialPage();
+    } else {
+      if (confirm("Your trial has ended. Upgrade to Boba Pro for $4.99/month?")) openPaymentPage();
+    }
+  }, [proUser]);
 
   const notesRef = useRef({});
 
@@ -125,6 +146,7 @@ export default function App() {
 
   // ── Cloud sync (Firestore) ──
   const syncToCloud = useCallback(async (notes, noteId) => {
+    if (!isProRef.current) return;
     const u = userRef.current;
     if (u && noteId && notes[noteId]) {
       try { await pushNote(u.uid, noteId, notes[noteId]); }
@@ -771,8 +793,9 @@ export default function App() {
               <div className="speech-bubble">Tap a dot to pick a block!</div>
             )}
             <BobaMascot awake={agentAwake} onClick={() => {
-              if (quizPhase === "idle") { setAgentAwake(true); setQuizPhase("selecting"); }
-              else { handleQuizClose(); }
+              if (quizPhase !== "idle") { handleQuizClose(); return; }
+              if (!isPro) { showUpgradePrompt(); return; }
+              setAgentAwake(true); setQuizPhase("selecting");
             }} />
             <p className="mascot-hint">
               {quizPhase === "loading" ? "Brewing..." :

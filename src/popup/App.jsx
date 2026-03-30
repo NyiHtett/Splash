@@ -9,6 +9,7 @@ import {
   mergeNotes,
   deleteCloudNote,
 } from "../shared/firebase";
+import { checkProStatus, openPaymentPage, openTrialPage } from "../shared/paywall";
 
 function cleanTabTitle(title) {
   if (!title) return "";
@@ -62,6 +63,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState("");
+  const [isPro, setIsPro] = useState(null);
+  const [proUser, setProUser] = useState(null);
 
   useEffect(() => {
     const unsub = onAuth((u) => {
@@ -69,6 +72,13 @@ export default function App() {
       setAuthLoading(false);
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    checkProStatus().then(({ isPro: pro, user: u }) => {
+      setIsPro(pro);
+      setProUser(u);
+    }).catch(() => setIsPro(false));
   }, []);
 
   useEffect(() => {
@@ -106,6 +116,10 @@ export default function App() {
     try {
       setSyncStatus("Signing in...");
       const result = await signIn();
+      if (!isPro) {
+        setSyncStatus("Signed in — upgrade to sync");
+        return;
+      }
       setSyncStatus("Syncing...");
       const cloudNotes = await pullAllNotes(result.user.uid);
       const localData = await chrome.storage.local.get([NOTES_KEY]);
@@ -119,7 +133,7 @@ export default function App() {
       console.error("Sign-in failed:", err);
       setSyncStatus("Sign-in failed");
     }
-  }, []);
+  }, [isPro]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -134,6 +148,11 @@ export default function App() {
 
   const handleSyncNow = useCallback(async () => {
     if (!user) return;
+    if (!isPro) {
+      if (!proUser?.trialStartedAt) openTrialPage();
+      else openPaymentPage();
+      return;
+    }
     try {
       setSyncStatus("Syncing...");
       const cloudNotes = await pullAllNotes(user.uid);
@@ -148,7 +167,7 @@ export default function App() {
       console.error("Sync failed:", err);
       setSyncStatus("Sync failed");
     }
-  }, [user]);
+  }, [user, isPro, proUser]);
 
   const openNote = useCallback(() => {
     let ctx = null;
@@ -217,6 +236,18 @@ export default function App() {
           </button>
         )}
       </section>
+
+      {isPro === false && (
+        <section className="upgrade-block">
+          <p className="upgrade-text">Unlock AI Quiz &amp; Cloud Sync</p>
+          <button
+            className="btn btn-upgrade"
+            onClick={() => proUser?.trialStartedAt ? openPaymentPage() : openTrialPage()}
+          >
+            {proUser?.trialStartedAt ? "Upgrade — $4.99/mo" : "Start free 3-day trial"}
+          </button>
+        </section>
+      )}
 
       <section className="notes-block">
         <h2>Notes</h2>

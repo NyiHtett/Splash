@@ -880,6 +880,9 @@ body.bg-fire .quiz-dot {
 
 .quiz-overlay {
   position: absolute;
+  left: 0 !important;
+  right: 0;
+  width: auto !important;
   display: flex;
   flex-direction: column;
   justify-content: center;
