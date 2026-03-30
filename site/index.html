@@ -607,6 +607,86 @@
 
     .price-card.pro .price-btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #2D2440; }
 
+    /* ── Waitlist form ── */
+    .waitlist-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .waitlist-form input[type="email"] {
+      font-family: "Nunito", sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--sheet);
+      border: 3px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 20px;
+      width: 260px;
+      box-shadow: var(--shadow);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .waitlist-form input[type="email"]::placeholder {
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .waitlist-form input[type="email"]:focus {
+      border-color: var(--accent);
+    }
+
+    .waitlist-success {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-family: "Fredoka", sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--honey);
+      background: rgba(240, 199, 94, 0.1);
+      border: 3px solid rgba(240, 199, 94, 0.25);
+      border-radius: 14px;
+      padding: 14px 24px;
+      box-shadow: var(--shadow-sm);
+      animation: fadeSlideUp 0.4s ease-out both;
+    }
+
+    .waitlist-success.show {
+      display: inline-flex;
+    }
+
+    .waitlist-count {
+      font-family: "Fredoka", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(245, 230, 211, 0.45);
+      margin-top: 12px;
+    }
+
+    .waitlist-badge {
+      display: inline-block;
+      font-family: "Fredoka", sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--honey);
+      background: rgba(240, 199, 94, 0.1);
+      border: 2px solid rgba(240, 199, 94, 0.2);
+      border-radius: 8px;
+      padding: 4px 10px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .waitlist-form { justify-content: center; }
+      .waitlist-form input[type="email"] { width: 100%; max-width: 300px; }
+      .waitlist-count { text-align: center; }
+    }
+
     /* ── Footer ── */
     footer {
       border-top: 2px solid rgba(255,255,255,0.06);
@@ -697,7 +777,7 @@
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#pricing">Pricing</a>
-        <a href="#" class="nav-cta" id="nav-install">Add to Chrome</a>
+        <a href="#hero-waitlist" class="nav-cta" id="nav-install">Join Waitlist</a>
       </div>
     </div>
   </nav>
@@ -712,13 +792,13 @@
           A cozy note-taking companion that lives in your browser.
           AI-powered quizzes, cloud sync, and a boba mascot that keeps you company while you study.
         </p>
+        <div class="waitlist-badge">Coming soon to Chrome Web Store</div>
         <div class="hero-actions">
-          <a href="#" class="btn-primary" id="hero-install">
-            Add to Chrome &mdash; Free
-          </a>
-          <a href="#pricing" class="btn-ghost">
-            See pricing
-          </a>
+          <form class="waitlist-form" id="hero-waitlist" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+            <input type="email" name="email" placeholder="your@email.com" required>
+            <button type="submit" class="btn-primary">Join Waitlist</button>
+          </form>
+          <div class="waitlist-success" id="hero-success">&#10003; You're on the list!</div>
         </div>
       </div>
       <div class="hero-visual">
@@ -806,7 +886,7 @@
             <li>Boba Run mini-game</li>
             <li>PDF export</li>
           </ul>
-          <a href="#" class="price-btn" id="price-free-btn">Add to Chrome</a>
+          <a href="#hero-waitlist" class="price-btn" id="price-free-btn">Join Waitlist</a>
         </div>
         <div class="price-card pro reveal">
           <p class="price-tier">Pro</p>
@@ -818,7 +898,7 @@
             <li>Google Cloud Sync</li>
             <li>Priority support</li>
           </ul>
-          <a href="#" class="price-btn" id="price-pro-btn">Start free trial</a>
+          <a href="#hero-waitlist" class="price-btn" id="price-pro-btn">Join Waitlist</a>
         </div>
       </div>
     </div>
@@ -1078,6 +1158,47 @@
       px(c, 16, 14, 8, 2, "rgba(245,230,211,0.25)");
       px(c, 12, 18, 16, 2, "rgba(245,230,211,0.2)");
     })();
+
+    // ── Waitlist form handling ──
+    document.querySelectorAll(".waitlist-form").forEach(form => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector("button");
+        const email = form.querySelector("input[type='email']");
+        btn.textContent = "Sending...";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(form.action, {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.value }),
+          });
+
+          if (res.ok) {
+            form.style.display = "none";
+            const success = form.nextElementSibling;
+            if (success) success.classList.add("show");
+          } else {
+            btn.textContent = "Try again";
+            btn.disabled = false;
+          }
+        } catch {
+          btn.textContent = "Try again";
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // Smooth scroll for waitlist links
+    document.querySelectorAll('a[href="#hero-waitlist"]').forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const input = document.querySelector("#hero-waitlist input");
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => input.focus(), 500);
+      });
+    });
 
     // PDF icon — document with arrow
     (function() {
