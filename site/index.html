@@ -125,8 +125,112 @@
       border-radius: 50%;
       background: #F0E8D8;
       box-shadow: 0 0 40px 8px rgba(240,230,200,0.15), 0 0 80px 20px rgba(240,230,200,0.08);
-      z-index: 1;
+      z-index: 10;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: opacity 0.6s, transform 0.6s;
+    }
+
+    .moon:hover {
+      transform: scale(1.1);
+    }
+
+    /* ── Fire theme ── */
+    body.fire .starfield {
+      background:
+        radial-gradient(circle at 18% 80%, rgba(240, 199, 94, 0.35) 0 16%, transparent 19%),
+        radial-gradient(circle at 46% 88%, rgba(230, 140, 60, 0.4) 0 20%, transparent 22%),
+        radial-gradient(circle at 75% 78%, rgba(200, 80, 40, 0.35) 0 17%, transparent 20%),
+        linear-gradient(180deg, #2C1508 0%, #5D2008 45%, #8F3510 100%);
+      transition: background 0.6s;
+    }
+
+    body.fire .stars-layer {
+      opacity: 0;
+      transition: opacity 0.6s;
+    }
+
+    body.fire .moon {
+      background: #F0A020;
+      box-shadow: 0 0 40px 12px rgba(240, 160, 30, 0.3), 0 0 80px 30px rgba(240, 160, 30, 0.15);
+    }
+
+    body.fire .moon::after {
+      background: #F5C830;
+      opacity: 0.6;
+    }
+
+    body.fire .mascot-glow {
+      background: radial-gradient(circle, rgba(224, 136, 58, 0.5) 0%, transparent 70%);
+    }
+
+    body.fire nav {
+      background: rgba(44, 21, 8, 0.7);
+      border-bottom-color: rgba(240, 160, 30, 0.15);
+    }
+
+    body.fire .nav-logo { color: #E0883A; }
+    body.fire .nav-cta { background: #E0883A; }
+
+    body.fire .section-label { color: #E0883A; }
+    body.fire .btn-primary { background: #E0883A; }
+
+    body.fire .feature-card:hover {
+      border-color: rgba(224, 136, 58, 0.25);
+    }
+
+    body.fire .price-card.pro {
+      background: linear-gradient(145deg, rgba(224, 136, 58, 0.12) 0%, rgba(200, 80, 40, 0.08) 100%);
+      border-color: #E0883A;
+      box-shadow: 0 0 30px rgba(224, 136, 58, 0.15);
+    }
+
+    body.fire .price-card.pro .price-btn { background: #E0883A; }
+    body.fire .price-card.pro::before { background: #F0A020; }
+
+    body.fire .price-features li::before { background: #E0883A; }
+
+    body.fire .waitlist-form input[type="email"]:focus { border-color: #E0883A; }
+
+    body.fire .divider {
+      background: linear-gradient(90deg, transparent, rgba(224, 136, 58, 0.2) 30%, rgba(224, 136, 58, 0.2) 70%, transparent);
+    }
+
+    /* ── Flames bar at top ── */
+    .flames {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      z-index: 0;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.6s;
+      background:
+        radial-gradient(ellipse 55px 90% at 15% 100%, #F5C830 0%, #F0A020 30%, #E07018 60%, transparent 85%),
+        radial-gradient(ellipse 70px 95% at 30% 100%, #F0D040 0%, #F0B028 25%, #D06018 55%, transparent 80%),
+        radial-gradient(ellipse 55px 85% at 50% 100%, #F5B830 0%, #E08820 35%, #C04810 60%, transparent 82%),
+        radial-gradient(ellipse 70px 95% at 70% 100%, #F0D040 0%, #F0B028 25%, #D06018 55%, transparent 80%),
+        radial-gradient(ellipse 55px 90% at 85% 100%, #F5C830 0%, #F0A020 30%, #E07018 60%, transparent 85%),
+        radial-gradient(ellipse 200px 40% at 50% 100%, rgba(200, 80, 20, 0.4) 0%, transparent 70%);
+      animation: flicker 1.5s ease-in-out infinite alternate;
+    }
+
+    body.fire .flames { opacity: 1; }
+
+    @keyframes flicker {
+      0%   { opacity: 0; transform: scaleY(1); }
+      20%  { opacity: 0.9; transform: scaleY(1.08) translateY(-2px); }
+      40%  { opacity: 0.75; transform: scaleY(0.95) translateY(1px); }
+      60%  { opacity: 0.95; transform: scaleY(1.12) translateY(-3px); }
+      80%  { opacity: 0.8; transform: scaleY(0.98); }
+      100% { opacity: 0.85; transform: scaleY(1.06) translateY(-1px); }
+    }
+
+    body.fire .flames {
+      animation: flicker 1.5s ease-in-out infinite alternate;
+      opacity: 0.8;
     }
 
     .moon::after {
@@ -768,7 +872,8 @@
 <body>
   <div class="starfield"></div>
   <div class="stars-layer"></div>
-  <div class="moon"></div>
+  <div class="flames"></div>
+  <div class="moon" title="Click to toggle theme"></div>
 
   <!-- Nav -->
   <nav>
@@ -1158,6 +1263,11 @@
       px(c, 16, 14, 8, 2, "rgba(245,230,211,0.25)");
       px(c, 12, 18, 16, 2, "rgba(245,230,211,0.2)");
     })();
+
+    // ── Moon theme toggle ──
+    document.querySelector(".moon").addEventListener("click", () => {
+      document.body.classList.toggle("fire");
+    });
 
     // ── Waitlist form handling ──
     document.querySelectorAll(".waitlist-form").forEach(form => {
